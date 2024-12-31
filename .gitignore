@@ -1,2 +1,5 @@
 # Ignore builds
 flp
+
+# Ignore OldOS folder used while rewriting
+OldOS
