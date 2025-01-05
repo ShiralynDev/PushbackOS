@@ -1,3 +1,5 @@
+[bits 16]
+[org 0x7c00]
 PROGRAM_SPACE equ 0x7e00 ; macro PROGRAM_SPACE to 0x7e00
 
 section .data
@@ -28,6 +30,4 @@ section .text
         mov bx, DiskReadErrorString ; bx / what to print is set to the Error
         call PrintString ; calls PrintString with bx set to the error / what to print to the error
         ret
-
-        jmp $
         

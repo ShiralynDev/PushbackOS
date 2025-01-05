@@ -1,4 +1,5 @@
 [bits 16]
+[org 0x7c00]
 
 section .data
     InputChar: times 10 db 0
