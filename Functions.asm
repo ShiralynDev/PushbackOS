@@ -2,7 +2,8 @@
 [org 0x7c00]
 
 section .data
-    InputChar: times 10 db 0
+    InputChar: times 50 db 0
+    CurrentPosition: db 0
 
 section .text
 
@@ -35,7 +36,6 @@ section .text
         pusha
         mov ah, 02h
         mov bh, 0x0
-        mov dl, 00h
         int 0x10
         popa
     ret
@@ -43,17 +43,44 @@ section .text
     GetKeyboardInput:
         pusha
         mov bx, 0
+        mov dx, 0
     Loop1:
+        cmp bx, 49
+        je Exit1
+
         mov ah, 00h ; sets keyboard mode to get keystroke
         int 0x16 ; bios call to take input
 
-        cmp al, 0x0D ; if al/input is 1C0D/enter
+        cmp al, 0x0D ; if al/input is 0D/enter
         je Exit1 ; then jump to exit
+        cmp al, 0x08 ; if al/input is 1C/backspace
+        je Exit2 ; then jump to exit
         mov [InputChar + bx], al ; moves the inputed char to InputChar
         inc bx ; increses bx / goes to the next char in the string
+        inc dx
+        mov [CurrentPosition], dx
         mov ah, 0x0e ; selects tele-type mode
         int 0x10 ; does the interupt and prints the input
         jmp Loop1 ; loops
+    Exit2:
+        dec bx
+        dec dx
+        mov [CurrentPosition], dx
+        mov dword [InputChar + bx], ' '
+
+        mov dh, [CurrentRow]
+        mov dl, [CurrentPosition]
+        call setLine
+
+        mov al, ' '
+        mov ah, 0x0e
+        int 0x10
+
+        mov dh, [CurrentRow]
+        mov dl, [CurrentPosition]
+        call setLine
+
+        jmp Loop1
     Exit1:
         mov al, 0 ; moves zero into al for next line
         mov [InputChar + bx], al ; makes the last char of the string 0 to show that it's the end of the string

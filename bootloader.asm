@@ -4,6 +4,7 @@
 jmp start
 
 TestingString: db "Test complete", 0
+CurrentRow: db 0
 
 %include "Functions.asm"
 %include "DiskRead.asm"
@@ -26,8 +27,46 @@ start:
 
     mov dh, 00h
     call setLine
+
+    loop:
+        mov ah, 00h ; sets keyboard mode to get keystroke
+        int 0x16 ; bios call to take input
+
+        cmp al, 0x0D ; if al/input is 0D/enter
+        je exit ; then jump to exit
+
+        cmp al, 0x53
+        je goDown
+        cmp al, 0x73
+        je goDown
+
+        cmp al, 0x57
+        je goUp
+        cmp al, 0x77
+        je goUp
+
+    jmp loop
+
+    goDown:
+        mov dh, [CurrentRow]
+        inc dh
+        call setLine
+        mov [CurrentRow], dh
+    jmp loop
+
+    goUp:
+        mov dh, [CurrentRow]
+        dec dh
+        call setLine
+        mov [CurrentRow], dh
+    jmp loop
+
+    exit:
+
+    mov dh, [CurrentRow]
     call GetKeyboardInput
-    mov dh, 01h
+    mov dh, [CurrentRow]
+    inc dh
     call setLine
     call PrintString
 
