@@ -9,23 +9,36 @@ CurrentRow: db 0
 %include "Functions.asm"
 %include "DiskRead.asm"
 
-mov [BOOT_DISK], dl
-
 start:
+
+    cli
+    push cs
+    pop ds
+    xor ax, ax
+    mov es, ax
+    mov ss, ax
+    mov sp, 0x7B00
+
+    sti
+
+    mov [BOOT_DISK], dl
+
     mov ah, 0x0e ; tele-type mode
     mov al, 'W' ; get ready to print W
     int 0x10 ; bios call
 
-    mov bp, 0x7c00 ; selects what parts of the memory the program uses
-    mov sp, bp ; Why we do this, idk
-
     call ClearScreen ; Calls ClearScreen from Functions
+    mov dh, 00h
+    mov dl, 00h ; all the way to the left
+    call setLine
+
     call ReadDisk ; Calls ReadDisk function from the DiskRead.asm file
 
     mov bx, TestingString
     call PrintString
 
-    mov dh, 00h
+    mov dh, 01h
+    mov dl, 00h ; all the way to the left
     call setLine
 
     loop:
@@ -49,6 +62,8 @@ start:
 
     goDown:
         mov dh, [CurrentRow]
+        cmp dh, 25
+        je loop
         inc dh
         call setLine
         mov [CurrentRow], dh
@@ -56,6 +71,8 @@ start:
 
     goUp:
         mov dh, [CurrentRow]
+        cmp dh, 1
+        je loop
         dec dh
         call setLine
         mov [CurrentRow], dh
