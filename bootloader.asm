@@ -3,8 +3,8 @@
 
 jmp start
 
-TestingString: db "Test complete", 0
-StartupString: db "Type help for cmds", 0
+StartupString: db "Type help for commands", 0
+CommandEnterString: db "$ ", 0
 CurrentRow: db 1
 InputCommand: db 16, "", 0
 
@@ -32,18 +32,10 @@ start:
     mov sp, 0x7B00
     sti
 
-    mov [BOOT_DISK], dl
-
-    mov ah, 0x0e ; tele-type mode
-    mov al, 'W' ; get ready to print W
-    int 0x10 ; bios call
-
     call ClearScreen ; Calls ClearScreen from Functions
     mov dh, 00h
     mov dl, 00h ; all the way to the left
     call setLine
-
-    call ReadDisk ; Calls ReadDisk function from the DiskRead.asm file
 
     mov bx, StartupString
     call PrintString
@@ -90,6 +82,8 @@ start:
     AfterCommandDef:
 
     CommandLoop:
+    mov bx, CommandEnterString
+    call PrintString
     call GetKeyboardInput
     mov [InputCommand], bx
     mov dh, [CurrentRow]
