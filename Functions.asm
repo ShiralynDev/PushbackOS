@@ -40,7 +40,7 @@ section .text
         popa
     ret
 
-    GetKeyboardInput:
+    GetKeyboardInput: ; keyboard input gets stored in bx
         pusha
         mov bx, 0
         mov dx, 0
@@ -66,7 +66,7 @@ section .text
         dec bx
         dec dx
         mov [CurrentPosition], dx
-        mov dword [InputChar + bx], ' '
+        mov byte [InputChar + bx], ' '
 
         mov dh, [CurrentRow]
         mov dl, [CurrentPosition]
@@ -89,25 +89,65 @@ section .text
         mov bx, InputChar ; moves the complete string back into bx for the other code to use
         ret
 
-    WriteToDisk:
-        pusha
-        mov ah, 03h
-        ; AL = Amount of sectors to write to
-        ; CH = cylinder to write
-        ; CL = What sector to start at
-        ; DH = head number
-        ; DL = driver number
-        ; ES = what to write
-        int 13
-    ret
+    CompareStrings: ; si = string 1, di = string 2, dx = result
+        push ax
+        push si
+        push di
 
-    GetSystemClock:
-        mov ah, 02h ; read RTC (real time clock)
-        int 1ah     ; bios call
-        mov al, cl
-        mov ah, 0x0e
-        int 0x10
-    ret
+        CompareStringLoop:
+            mov al, [si]
+            mov ah, [di]
+            cmp al, ah
+            jne CompareStringExitNotEqual
+
+            test al, al
+            jz CompareStringExitEqual
+
+            inc si
+            inc di
+            jmp CompareStringLoop
+
+        CompareStringExitNotEqual:
+            mov dx, 0
+            jmp CompareStringDone
+
+        CompareStringExitEqual:
+            mov dx, 1
+
+        CompareStringDone:
+
+        pop si
+        pop di
+        pop ax
+        ret
+
+    ax_to_string:
+        pusha
+
+        mov bx, ax
+        lea si, [mem_buf+5]
+        mov cx, 0
+
+    convert_loop:
+        xor dx, dx
+        mov ax, bx
+        mov bx, 10
+        div bx
+        add dl, '0'
+        dec si
+        mov [si], dl
+        mov bx, ax
+        inc cx
+        cmp ax, 0
+        jne convert_loop
+        lea di, [mem_buf]
+    shift_loop:
+        lodsb
+        stosb
+        loop shift_loop
+        mov byte [di], 0
+        popa
+        ret
 
 ;CompareInput:
 ;ret
