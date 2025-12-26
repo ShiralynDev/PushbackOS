@@ -1,15 +1,20 @@
 [bits 16]
-[org 0x7c00]
 
-section .data
     InputChar: times 50 db 0
     CurrentPosition: db 0
+    mem_buf times 6 db 0
+    CurrentRow: db 1
 
-section .text
+    NoSuchDriveString: db "No such drive", 0
+    HardDiskString: db "Hard disk", 0
+    FloppyChangeString: db "Floppy disk type 1", 0
+    FloppyNoChangeString: db "Floppy disk type 2", 0
+    UnknownDiskString: db "Unknown disk type", 0
 
-    PrintString:
+
+    PrintString: ; dx = maxLineSize
         pusha ; puts stuff that we will use into the stack so we don't ruin our main file
-        mov ah, 0x0e ; selects tele-type mode
+        mov ah, 0Eh ; selects tele-type mode
     Loop: 
         cmp [bx], byte 0 ;  checks if bx aka the string is at EOS / ions  zero
         je Exit
@@ -43,7 +48,7 @@ section .text
     GetKeyboardInput: ; keyboard input gets stored in bx
         pusha
         mov bx, 0
-        mov dx, 0
+        mov [CurrentPosition], dx
     Loop1:
         cmp bx, 49
         je Exit1
@@ -63,6 +68,8 @@ section .text
         int 0x10 ; does the interupt and prints the input
         jmp Loop1 ; loops
     Exit2:
+        cmp bx, 0
+        je Loop1
         dec bx
         dec dx
         mov [CurrentPosition], dx
@@ -147,6 +154,37 @@ section .text
         loop shift_loop
         mov byte [di], 0
         popa
+        ret
+
+    GetDiskInfo: ; dl = disk number, returns: bx = disk type
+        mov ah, 15h
+        int 0x13
+
+        cmp ah, 0x00
+        je NoSuchDrive
+        cmp ah, 0x03
+        je HardDisk
+        cmp ah, 0x02
+        je FloppyWithChange
+        cmp ah, 0x01
+        je FloppyNoChange
+
+    HardDisk:
+        mov bx, HardDiskString
+        jmp DiskInfoDone
+
+    FloppyWithChange:
+        mov bx, FloppyChangeString
+        jmp DiskInfoDone
+
+    FloppyNoChange:
+        mov bx, FloppyNoChangeString
+        jmp DiskInfoDone
+
+    NoSuchDrive:
+        mov bx, NoSuchDriveString
+
+    DiskInfoDone:
         ret
 
 ;CompareInput:
